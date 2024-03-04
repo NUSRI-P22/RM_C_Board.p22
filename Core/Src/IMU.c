@@ -12,7 +12,7 @@
 // Initialise algorithms
 FusionAhrs ahrs;
 FusionOffset offset;
-float IMUdeltaTime = 0.001; // default 1000Hz
+float IMUdeltaTime = 0.002; // default 500Hz
 float gyro[3], accel[3], temp;
 FusionVector gyroscope;
 FusionVector accelerometer;
@@ -35,18 +35,18 @@ void IMU_update()
 
 	gyroscope = (FusionVector){{FusionRadiansToDegrees(gyro[0]), FusionRadiansToDegrees(gyro[1]), FusionRadiansToDegrees(gyro[2])}}; // unit: dps
 	accelerometer = FusionVectorMultiplyScalar((FusionVector){{accel[0], accel[1], accel[2]}}, 1.0f / g); // unit: g
-	magnetometer = (FusionVector){{IST8310data[0],IST8310data[1],-IST8310data[2]}};
+	// magnetometer = (FusionVector){{IST8310data[0],IST8310data[1],-IST8310data[2]}};
 	
 	// Apply calibration
 	gyroscope = FusionCalibrationInertial(gyroscope, gyroscopeMisalignment, gyroscopeSensitivity, gyroscopeOffset);
 	accelerometer = FusionCalibrationInertial(accelerometer, accelerometerMisalignment, accelerometerSensitivity, accelerometerOffset);
-	magnetometer = FusionCalibrationMagnetic(magnetometer, softIronMatrix, hardIronOffset);
+	// magnetometer = FusionCalibrationMagnetic(magnetometer, softIronMatrix, hardIronOffset);
 	
 	// Update gyroscope offset correction algorithm
 	gyroscope = FusionOffsetUpdate(&offset, gyroscope);
 	
-	// FusionAhrsUpdateNoMagnetometer(&ahrs, gyroscope, accelerometer, IMUdeltaTime);
-	FusionAhrsUpdate(&ahrs, gyroscope, accelerometer, magnetometer, IMUdeltaTime); // AHRS Calculation
+	FusionAhrsUpdateNoMagnetometer(&ahrs, gyroscope, accelerometer, IMUdeltaTime);
+	// FusionAhrsUpdate(&ahrs, gyroscope, accelerometer, magnetometer, IMUdeltaTime); // AHRS Calculation
 }
 
 void IMU_print()

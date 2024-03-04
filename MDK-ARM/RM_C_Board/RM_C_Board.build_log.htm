@@ -21,13 +21,26 @@ Target DLL:      STLink\ST-LINKIII-KEIL_SWO.dll V3.1.0.0
 Dialog DLL:      TCM.DLL V1.56.4.0
  
 <h2>Project:</h2>
-E:\NUSRI-23-24-P22\RM_C_Board\MDK-ARM\RM_C_Board.uvprojx
-Project File Date:  12/13/2023
+E:\RM_C_Board.p22\MDK-ARM\RM_C_Board.uvprojx
+Project File Date:  03/04/2024
 
 <h2>Output:</h2>
 *** Using Compiler 'V6.19', folder: 'C:\Keil_v5\ARM\ARMCLANG\Bin'
 Build target 'RM_C_Board'
-"RM_C_Board\RM_C_Board.axf" - 0 Error(s), 0 Warning(s).
+../Core/Src/main.c(32): warning: In file included from...
+../Core/Inc/headfile.h(29): warning: In file included from...
+../Core/Inc/BMI088driver.h(49): warning: 'packed' attribute ignored [-Wignored-attributes]
+typedef __packed struct BMI088_RAW_DATA
+        ^
+../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_def.h(114): note: expanded from macro '__packed'
+    #define __packed  __attribute__((packed))
+                                     ^
+1 warning generated.
+compiling main.c...
+linking...
+Program Size: Code=45582 RO-data=1374 RW-data=88 ZI-data=4160  
+FromELF: creating hex file...
+"RM_C_Board\RM_C_Board.axf" - 0 Error(s), 1 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -51,7 +64,7 @@ Package Vendor: Keil
 
    * Component: ARM::CMSIS:CORE:5.6.0
       Include file:  CMSIS/Core/Include/tz_context.h
-Build Time Elapsed:  00:00:00
+Build Time Elapsed:  00:00:01
 </pre>
 </body>
 </html>

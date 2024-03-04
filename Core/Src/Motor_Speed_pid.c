@@ -108,16 +108,15 @@ void Speed_set()
 		if(free_flag == 0)
 		{
 			Motor_Speed_Calc();
-			motor_pid[0].target = set_spdL;    //׳ǰ
-			motor_pid[1].target = set_spdL;    //׳º󍊉		
-			motor_pid[2].target = -set_spdR;    //Ӓǰ
-			motor_pid[3].target = -set_spdR;    //Ӓº󍊉		
+			motor_pid[0].target = set_spdL;
+			motor_pid[1].target = set_spdL; 		
+			motor_pid[2].target = -set_spdR;    
+			motor_pid[3].target = -set_spdR;   
 			for(int i=0; i<4; i++)
 			{	 																							
-				motor_pid[i].f_cal_pid(&motor_pid[i],motor_chassis[i].speed_rpm);    //¸ù¾݉趨ֵ½øАPID¼Ƌ㡣
-			}
+				motor_pid[i].f_cal_pid(&motor_pid[i],motor_chassis[i].speed_rpm);   			}
 
-			CAN_cmd_chassis(motor_pid[0].output,   //½«PIDµļƋ㽡¹ûͨ¹ýCAN·¢ˍµ½µ绺
+			CAN_cmd_chassis(motor_pid[0].output,
 											motor_pid[1].output,
 											motor_pid[2].output,
 											motor_pid[3].output);

@@ -25,7 +25,7 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
-
+#include "time.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -55,14 +55,14 @@
 
 extern int stop_flag; // KEY Button
 extern FusionAhrs ahrs;
-
+int SERIAL_PERIOD_MS = 10; // 100HZ
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-void VOFA_Print();
+void Serial_Output();
 
 /* USER CODE END PFP */
 
@@ -118,12 +118,12 @@ int main(void)
 
 
 	
-	TaskAdd(VOFA_Print, 20); // 50Hz Print to VOFA
+	TaskAdd(Serial_Output, SERIAL_PERIOD_MS); // 100Hz Serial
 	TaskAdd(Speed_set, 5); // 200Hz for wheel PID
-	TaskAdd(IMU_update, IMUdeltaTime * 1000); // 1000Hz for updating IMU and print delta time // TaskPrintDeltaTime( TaskAdd(IMU_update, 1) );
+	TaskAdd(IMU_update, IMUdeltaTime * 1000); // 00Hz for updating IMU and print delta time // TaskPrintDeltaTime( TaskAdd(IMU_update, 1) );
 	
 	TaskAdd(Joystick_motor_control, 20); // 50Hz
-	TaskAdd(ParseGpsBuffer, 100); // 10Hz
+//	TaskAdd(ParseGpsBuffer, 100); // 10Hz
 
   /* USER CODE END 2 */
 
@@ -202,17 +202,32 @@ extern FusionOffset offset;
 extern FusionVector gyroscope;
 extern FusionVector accelerometer;
 extern FusionVector magnetometer;
-float real_vcx;
+float real_vc;
 float real_w;    //clockwise stands for minus
+float x, y, z; // local pose
 
-void VOFA_Print(){
-	const FusionEuler euler = FusionQuaternionToEuler(FusionAhrsGetQuaternion(&ahrs));
+void Serial_Output(){
+	const FusionQuaternion Q = FusionAhrsGetQuaternion(&ahrs);
+	const FusionEuler euler = FusionQuaternionToEuler(Q);
 	const FusionVector LinearAcc = FusionAhrsGetLinearAcceleration(&ahrs);
-	// const FusionVector EarthAcc = FusionAhrsGetEarthAcceleration(&ahrs);
+	MOTORrpm2vw(motor_chassis[0].speed_rpm,-motor_chassis[2].speed_rpm,&real_vc,&real_w);
+	float yaw = FusionDegreesToRadians(euler.angle.yaw), pitch = FusionDegreesToRadians(euler.angle.pitch), roll = FusionDegreesToRadians(euler.angle.roll);
+	float cos_yaw = cos(yaw), sin_yaw = sin(yaw);
+	float cos_pitch = cos(pitch), sin_pitch = sin(pitch);
+	float cos_roll = cos(roll), sin_roll = sin(roll);
+	float delta_s = real_vc * (float)SERIAL_PERIOD_MS / 1000.0f;
+	// pose integration
+	x += (cos_yaw * sin_pitch * sin_roll - sin_yaw * cos_roll) * delta_s;
+	y += (sin_yaw * sin_pitch * sin_roll + cos_yaw * cos_roll) * delta_s;
+	z += (cos_pitch * sin_roll) * delta_s;
 	
-	MOTORrpm2vw(motor_chassis[0].speed_rpm,-motor_chassis[2].speed_rpm,&real_vcx,&real_w);
-	LongLat2XY(Convert_to_degrees(Save_Data.longitude),Convert_to_degrees(Save_Data.latitude),&gps_X,&gps_Y);
-	LongLat2XY(120.742925,31.268221,&gps_X0,&gps_Y0);
+	usart_printf("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",	
+											x, y, z, // pose
+											Q.element.x, Q.element.y, Q.element.z, Q.element.w, // orientation
+											0.0f, real_vc, 0.0f, // linear acceleration
+											FusionDegreesToRadians(gyroscope.axis.x), FusionDegreesToRadians(gyroscope.axis.y), FusionDegreesToRadians(gyroscope.axis.z));
+	//	LongLat2XY(Convert_to_degrees(Save_Data.longitude),Convert_to_degrees(Save_Data.latitude),&gps_X,&gps_Y);
+//	LongLat2XY(120.742925,31.268221,&gps_X0,&gps_Y0);
 	
 	// Print to VOFA+
 //	usart_printf("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
@@ -222,23 +237,25 @@ void VOFA_Print(){
 //			euler.angle.roll, euler.angle.pitch, euler.angle.yaw
 //	);
 	
-usart_printf("%lf,%lf,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",	
-			Convert_to_degrees(Save_Data.latitude),
-			Convert_to_degrees(Save_Data.longitude),
-			motor_chassis[0].speed_rpm,
-			motor_chassis[1].speed_rpm,
-			-motor_chassis[2].speed_rpm,
-			-motor_chassis[3].speed_rpm,
-			real_vcx,
-			real_w,
-			gyro[2],
-			euler.angle.roll,
-			euler.angle.pitch,
-			euler.angle.yaw,
-			LinearAcc.axis.x,
-			gps_X-gps_X0,
-			gps_Y-gps_Y0
-			);
+//usart_printf("%lf,%lf,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",	
+//			Convert_to_degrees(Save_Data.latitude),
+//			Convert_to_degrees(Save_Data.longitude),
+//			motor_chassis[0].speed_rpm,
+//			motor_chassis[1].speed_rpm,
+//			-motor_chassis[2].speed_rpm,
+//			-motor_chassis[3].speed_rpm,
+//			real_vc,
+//			real_w,
+//			gyro[2],
+//			euler.angle.roll,
+//			euler.angle.pitch,
+//			euler.angle.yaw,
+//			LinearAcc.axis.x,
+//			gps_X-gps_X0,
+//			gps_Y-gps_Y0
+//			);
+			
+
 	// usart_printf("%0.3f,%0.3f,%0.3f\n", euler.angle.roll, euler.angle.pitch, euler.angle.yaw);
 //	 PrintGpsBuffer();
 }
